@@ -6,7 +6,12 @@
     "compile": "babel -d lib/ src/"
   },
   "bin": "lib/update-couch-designs.js",
-  "dependencies": {},
+  "dependencies": {
+    "qouch": "mammaldev/qouch#v0.5.0",
+    "deep-equal": "^1.0.0",
+    "optimist": "^0.6.1",
+    "glob": "^4.4.0"
+  },
   "devDependencies": {
     "babel": "^4.0.1"
   }
