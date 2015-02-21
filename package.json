@@ -1,0 +1,13 @@
+{
+  "name": "update-couch-designs",
+  "version": "0.1.0",
+  "preferGlobal": true,
+  "scripts": {
+    "compile": "babel -d lib/ src/"
+  },
+  "bin": "lib/update-couch-designs.js",
+  "dependencies": {},
+  "devDependencies": {
+    "babel": "^4.0.1"
+  }
+}
