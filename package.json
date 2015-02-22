@@ -1,6 +1,6 @@
 {
   "name": "update-couch-designs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "preferGlobal": true,
   "scripts": {
     "compile": "babel -d lib/ src/",
@@ -15,5 +15,15 @@
   },
   "devDependencies": {
     "babel": "^4.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesallardice/update-couch-designs"
+  },
+  "bugs": {
+    "url": "https://github.com/jamesallardice/update-couch-designs/issues"
+  },
+  "keywords": [
+    "couchdb"
+  ]
 }
