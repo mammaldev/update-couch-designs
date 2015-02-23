@@ -18,7 +18,7 @@ export default ( { db = '', docs = '' } ) => {
     // programs. Node's require can handle both. This will throw if any of the
     // design document files are invalid.
     let cwd = process.cwd();
-    let docs = files.map(( file ) => require(path.join(cwd), file));
+    let docs = files.map(( file ) => require(path.join(cwd, file)));
     let qouch = new Qouch(db);
 
     new Promise(( resolve, reject ) => {
