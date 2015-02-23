@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-import optimist from 'optimist';
+import yargs from 'yargs';
 import equal from 'deep-equal';
 import Qouch from 'qouch';
 import glob from 'glob';
 import fs from 'fs';
 
 // Configure CLI options.
-let argv = optimist
+let argv = yargs
   .usage('Update the design documents in a CouchDB database.')
   .describe('db', 'The URL of a CouchDB database')
   .describe('docs', 'A glob matching CouchDB design documents (JSON files)')
