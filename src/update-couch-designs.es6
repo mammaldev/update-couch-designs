@@ -1,3 +1,5 @@
+import 'core-js/shim';
+
 import equal from 'deep-equal';
 import Qouch from 'qouch';
 import glob from 'glob';
