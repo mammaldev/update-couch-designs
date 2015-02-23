@@ -1,6 +1,6 @@
 {
   "name": "update-couch-designs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "preferGlobal": true,
   "scripts": {
     "compile": "babel -d lib/ src/",
