@@ -3,6 +3,7 @@ import 'core-js/shim';
 import equal from 'deep-equal';
 import Qouch from 'qouch';
 import glob from 'glob';
+import path from 'path';
 import fs from 'fs';
 
 export default ( { db = '', docs = '' } ) => {
@@ -16,7 +17,8 @@ export default ( { db = '', docs = '' } ) => {
     // Import all the files. They should all be either valid JSON or valid JS
     // programs. Node's require can handle both. This will throw if any of the
     // design document files are invalid.
-    let docs = files.map(( file ) => require(file));
+    let cwd = process.cwd();
+    let docs = files.map(( file ) => require(path.join(cwd), file));
     let qouch = new Qouch(db);
 
     new Promise(( resolve, reject ) => {
