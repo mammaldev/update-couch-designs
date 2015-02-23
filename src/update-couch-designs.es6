@@ -11,103 +11,79 @@ export default ( { db = '', docs = '' } ) => {
   // Get files matching the glob.
   glob(docs, ( err, files ) => {
 
-    // Read the contents of the files.
-    Promise.all(files.map(( file ) => {
-      return new Promise(( resolve, reject ) => {
-        fs.readFile(file, { encoding: 'utf8' }, ( err, file ) => {
+    // Import all the files. They should all be either valid JSON or valid JS
+    // programs. Node's require can handle both. This will throw if any of the
+    // design document files are invalid.
+    let docs = files.map(( file ) => require(file));
+    let qouch = new Qouch(db);
 
-          if ( err ) {
-            return reject(err);
-          }
+    new Promise(( resolve, reject ) => {
 
-          return resolve(file);
-        });
+      // Attempt to create the database.
+      qouch.createDB()
+      .then(() => resolve())
+      .catch(( err ) => {
+
+        // CouchDB returns an HTTP 412 status code if the database already
+        // exists. If that's the case we can continue.
+        if ( err.response && err.response.status === 412 ) {
+          return resolve();
+        }
+
+        return reject(err);
       });
-    }))
-    .then(( docs ) => {
+    })
+    .then(() => {
 
-      // The design documents should all be JSON. We attempt to parse them and
-      // exit if any file is invalid.
-      docs = docs.map(( doc, i ) => {
-        try {
-          return JSON.parse(doc);
-        } catch ( err ) {
-          throw new Error('Invalid JSON in design document: ' + files[ i ]);
+      // Get existing design documents from the database.
+      return qouch.fetch(docs.map(( doc ) => doc._id));
+    })
+    .then(( existingDocs ) => {
+
+      // Build a map of the existing design document IDs to documents.
+      existingDocs = existingDocs.reduce(( obj, doc ) => {
+        if ( doc ) {
+          obj[ doc._id ] = doc;
+        }
+        return obj;
+      }, {});
+
+      // Find which design documents need to be inserted or updated.
+      let changed = [];
+
+      docs.forEach(( doc ) => {
+
+        let currentDoc = existingDocs[ doc._id ];
+
+        if ( currentDoc ) {
+
+          // If the design document already exists in the database we need to
+          // set the revision on the potentially updated document as CouchDB
+          // requires a specific revision to update.
+          doc._rev = currentDoc._rev;
+
+          if ( equal(currentDoc, doc) ) {
+
+            // The design document has not changed since it was last updated.
+            console.info('NO CHANGE %s ( _rev: %s )', doc._id, doc._rev);
+          } else {
+
+            // The design document has changed and needs to be updated.
+            console.info('UPDATE %s from _rev: %s', doc._id, doc._rev);
+            changed.push(doc);
+          }
+        } else {
+
+          // It's a new design document and will be inserted into the
+          // database.
+          console.info('CREATE %s', doc._id);
+          changed.push(doc);
         }
       });
 
-      // If we've reached this point successfully we can attempt to insert the
-      // design documents.
-      let qouch = new Qouch(db);
-
-      return new Promise(( resolve, reject ) => {
-
-        // Attempt to create the database.
-        qouch.createDB()
-        .then(() => resolve())
-        .catch(( err ) => {
-
-          // CouchDB returns an HTTP 412 status code if the database already
-          // exists. If that's the case we can continue.
-          if ( err.response && err.response.status === 412 ) {
-            return resolve();
-          }
-
-          return reject(err);
-        });
-      })
-      .then(() => {
-
-        // Get existing design documents from the database.
-        return qouch.fetch(docs.map(( doc ) => doc._id));
-      })
-      .then(( existingDocs ) => {
-
-        // Build a map of the existing design document IDs to documents.
-        existingDocs = existingDocs.reduce(( obj, doc ) => {
-          if ( doc ) {
-            obj[ doc._id ] = doc;
-          }
-          return obj;
-        }, {});
-
-        // Find which design documents need to be inserted or updated.
-        let changed = [];
-
-        docs.forEach(( doc ) => {
-
-          let currentDoc = existingDocs[ doc._id ];
-
-          if ( currentDoc ) {
-
-            // If the design document already exists in the database we need to
-            // set the revision on the potentially updated document as CouchDB
-            // requires a specific revision to update.
-            doc._rev = currentDoc._rev;
-
-            if ( equal(currentDoc, doc) ) {
-
-              // The design document has not changed since it was last updated.
-              console.info('NO CHANGE %s ( _rev: %s )', doc._id, doc._rev);
-            } else {
-
-              // The design document has changed and needs to be updated.
-              console.info('UPDATE %s from _rev: %s', doc._id, doc._rev);
-              changed.push(doc);
-            }
-          } else {
-
-            // It's a new design document and will be inserted into the
-            // database.
-            console.info('CREATE %s', doc._id);
-            changed.push(doc);
-          }
-        });
-
-        // Send the design documents to CouchDB. Those that now have a revision
-        // specified will be updated and others will be created.
-        return qouch.bulk(changed);
-      });
+      // Send the design documents to CouchDB. Those that now have a revision
+      // specified will be updated and others will be created.
+      return qouch.bulk(changed);
     })
     .catch(( err ) => {
 
