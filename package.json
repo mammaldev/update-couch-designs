@@ -10,12 +10,12 @@
   "dependencies": {
     "qouch": "mammaldev/qouch#v0.5.0",
     "deep-equal": "^1.0.0",
-    "core-js": "^0.6.0",
+    "core-js": "^0.8.4",
     "yargs": "^3.2.1",
     "glob": "^4.4.0"
   },
   "devDependencies": {
-    "babel": "^4.0.1"
+    "babel": "^5.1.11"
   },
   "repository": {
     "type": "git",
