@@ -11,4 +11,10 @@ let argv = yargs
   .demand([ 'db', 'docs' ])
   .argv;
 
-updateCouchDesigns(argv);
+updateCouchDesigns(argv)
+.catch(( err ) => {
+
+  // Something went wrong. Print the error and exit.
+  console.error(err);
+  process.exit(1);
+});
