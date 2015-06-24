@@ -11,8 +11,23 @@ export default ( { db = '', docs = '' } ) => {
   // Remove trailing slash from the database URL if necessary.
   db = db.replace(/\/$/, '');
 
-  // Get files matching the glob.
-  glob(docs, ( err, files ) => {
+  return new Promise(( resolve, reject ) => {
+
+    // Get files matching the glob.
+    glob(docs, ( err, files ) => {
+
+      if ( err ) {
+        return reject(err);
+      }
+
+      if ( !files.length ) {
+        return reject(new Error('No files found.'));
+      }
+
+      return resolve(files);
+    });
+  })
+  .then(( files ) => {
 
     // Import all the files. They should all be either valid JSON or valid JS
     // programs. Node's require can handle both. This will throw if any of the
@@ -21,7 +36,7 @@ export default ( { db = '', docs = '' } ) => {
     let docs = files.map(( file ) => require(path.join(cwd, file)));
     let qouch = new Qouch(db);
 
-    new Promise(( resolve, reject ) => {
+    return new Promise(( resolve, reject ) => {
 
       // Attempt to create the database.
       qouch.createDB()
@@ -88,12 +103,6 @@ export default ( { db = '', docs = '' } ) => {
       // Send the design documents to CouchDB. Those that now have a revision
       // specified will be updated and others will be created.
       return qouch.bulk(changed);
-    })
-    .catch(( err ) => {
-
-      // Something went wrong. Print the error and exit.
-      console.error(err);
-      process.exit(1);
     });
   });
 };
