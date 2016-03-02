@@ -32,8 +32,7 @@ export default ( { db = '', docs = '' } ) => {
     // Import all the files. They should all be either valid JSON or valid JS
     // programs. Node's require can handle both. This will throw if any of the
     // design document files are invalid.
-    let cwd = process.cwd();
-    let docs = files.map(( file ) => require(path.join(cwd, file)));
+    let docs = files.map(( file ) => require(path.resolve(file)));
     let qouch = new Qouch(db);
 
     return new Promise(( resolve, reject ) => {
