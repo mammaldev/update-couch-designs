@@ -1,6 +1,6 @@
 {
   "name": "update-couch-designs",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "preferGlobal": true,
   "scripts": {
     "compile": "babel -sd lib/ src/",
@@ -26,6 +26,11 @@
     "url": "https://github.com/mammaldev/update-couch-designs/issues"
   },
   "keywords": [
-    "couchdb"
+    "couch",
+    "couchdb",
+    "design",
+    "document",
+    "view",
+    "index"
   ]
 }
