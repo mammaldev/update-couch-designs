@@ -5,8 +5,14 @@ import Qouch from 'qouch';
 import glob from 'glob';
 import path from 'path';
 import fs from 'fs';
+import { format } from 'util';
+import ixcouch from 'couchdb-indexer';
 
-export default ( { db = '', docs = '' } ) => {
+export default ({
+  db = '',
+  docs = '',
+  tempDocPrefix = format('ucd-%d-', +new Date)
+}) => {
 
   // Remove trailing slash from the database URL if necessary.
   db = db.replace(/\/$/, '');
@@ -99,9 +105,68 @@ export default ( { db = '', docs = '' } ) => {
         }
       });
 
-      // Send the design documents to CouchDB. Those that now have a revision
-      // specified will be updated and others will be created.
-      return qouch.bulk(changed);
+      // if no design docs have been added or changed then there's nothing more to do
+      if ( !changed.length ) {
+        return [];
+      }
+
+      // create temp design docs
+      let tempDocs = changed.map(( orig ) => {
+        var tmp = JSON.parse(JSON.stringify(orig));
+        tmp._id = tmp._id.replace(/^(_design\/)/, '$1' + tempDocPrefix)
+        tmp._rev = void 0;
+        return tmp;
+      });
+
+      console.info('> Save temporary design docs with prefix "%s"', tempDocPrefix);
+
+      return qouch.bulk(tempDocs)
+      .then(updateRevs(tempDocs))
+      .then(() => {
+
+        // index newly created temp design docs
+        console.info('> Index views on new temp design docs');
+        console.log({
+          filter: new RegExp('^' + tempDocPrefix),
+          maxActiveTasks: 4, // TODO: provide option rather than hard-coding maxActiveTasks
+        });
+
+        return ixcouch(qouch, {
+          filter: new RegExp('^' + tempDocPrefix),
+          maxActiveTasks: 4, // TODO: provide option rather than hard-coding maxActiveTasks
+        });
+
+      })
+      .then(() => {
+
+        // now that views indexed, save changed docs under original names
+        console.info('> Indexing complete - update original design docs');
+        return qouch.bulk(changed);
+
+      })
+      .then(updateRevs(changed))
+      .then(() => {
+
+        // finally, delete the temporary design docs and return changed docs
+        console.info('> Delete temporary design docs');
+
+        tempDocs.forEach(( doc ) => doc._deleted = true);
+        return qouch.bulk(tempDocs)
+
+      })
+      .then(() => {
+        console.info('> Success');
+        return changed;
+      });
     });
   });
 };
+
+function updateRevs( originals ) {
+  return function ( updates ) {
+
+    originals.forEach(( orig, i ) => orig._rev = updates[ i ]._rev);
+
+    return originals;
+  };
+}
